@@ -129,19 +129,46 @@ async def search_knowledge(
     limit: int = 5,
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Keyword-based search stub (RAG embeddings wired in Phase 3)."""
+    """Keyword-based search (RAG embeddings wired in Phase 3)."""
     if not q.strip():
         return {"results": [], "query": q}
+    from sqlalchemy import text as sa_text
+    # Use raw LIKE for SQLite compatibility with Unicode text
+    pattern = f"%{q}%"
     stmt = (
         select(KnowledgeChunk)
         .join(KnowledgeDocument)
         .where(
             KnowledgeDocument.status == "published",
-            KnowledgeChunk.text.contains(q),
+            KnowledgeChunk.text.like(pattern),
         )
         .limit(limit)
     )
     chunks = list(await db.scalars(stmt))
+    # Also search document titles/content if no chunks found
+    if not chunks:
+        doc_stmt = (
+            select(KnowledgeDocument)
+            .where(
+                KnowledgeDocument.status == "published",
+                KnowledgeDocument.content.like(pattern),
+            )
+            .limit(limit)
+        )
+        docs = list(await db.scalars(doc_stmt))
+        return {
+            "results": [
+                {
+                    "chunk_id": None,
+                    "document_id": d.id,
+                    "text": d.content[:500],
+                    "title": d.title,
+                    "chunk_index": 0,
+                }
+                for d in docs
+            ],
+            "query": q,
+        }
     return {
         "results": [
             {

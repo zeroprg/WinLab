@@ -533,12 +533,35 @@ async def post_message(payload: Dict[str, Any], db: AsyncSession = Depends(get_d
     rows.reverse()
     history = [{"role": m.role, "content": m.text} for m in rows]
 
-    # Call OpenAI Chat Completions API
+    # WinLab: try intent router first (knowledge, onboarding, HR tools)
+    reply_text = None
     try:
-        reply_text = await chat_completion(history, instructions)
+        import sys as _sys
+        _sys.path.insert(0, ".")
+        from app.modules.chatbot.routing.intent_router import IntentRouter
+        from app.modules.chatbot.schemas import ConversationEvent, Channel
+        event = ConversationEvent(
+            channel=Channel.WEB,
+            external_user_id=user_id,
+            text=text,
+            metadata={"locale": client_locale or "ru"},
+        )
+        _router = IntentRouter()
+        route = _router.route(event)
+        domain_reply = await _router.handle(route, event, user_id)
+        if domain_reply:
+            reply_text = domain_reply
+            logger.info(f"WinLab intent={route.intent.value} confidence={route.confidence:.2f}")
     except Exception as exc:
-        logger.error(f"OpenAI chat error: {exc}")
-        reply_text = f"Sorry, I couldn't process your request. ({exc})"
+        logger.warning(f"WinLab intent router error: {exc}")
+
+    # Fallback to OpenAI Chat Completions if no domain response
+    if not reply_text:
+        try:
+            reply_text = await chat_completion(history, instructions)
+        except Exception as exc:
+            logger.error(f"OpenAI chat error: {exc}")
+            reply_text = f"Извините, не удалось обработать запрос. ({exc})"
 
     assistant_msg = await _create_message(db, user_id, reply_text, role="assistant", session_id=session_id)
 

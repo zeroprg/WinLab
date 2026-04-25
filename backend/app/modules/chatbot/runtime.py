@@ -44,7 +44,7 @@ class ChatbotRuntime:
         self.audit_sink = audit_sink
         self.policy = policy or HrAssistantBotPolicy()
 
-    def handle_event(self, event: ConversationEvent) -> ChatbotResponse:
+    async def handle_event(self, event: ConversationEvent) -> ChatbotResponse:
         session = ConversationSession(
             channel=event.channel,
             external_user_id=event.external_user_id,

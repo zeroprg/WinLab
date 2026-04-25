@@ -65,39 +65,68 @@ class IntentRouter:
         return None  # escalate
 
     async def _handle_knowledge(self, question: str) -> str:
-        """Search knowledge base and return answer with citation stub."""
-        import httpx
+        """Search knowledge base directly via DB."""
         try:
-            from urllib.parse import quote
-            q = quote(question[:200])
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                r = await client.get(f"http://127.0.0.1:8000/api/knowledge/search?q={q}&limit=3")
-            if r.status_code == 200:
-                data = r.json()
-                results = data.get("results", [])
-                if results:
-                    excerpts = "\n".join(f"• {res['text'][:200]}" for res in results[:2])
+            from server.db import get_session_factory
+            from server.models.knowledge import KnowledgeChunk, KnowledgeDocument
+            from sqlalchemy import select
+            pattern = f"%{question[:100]}%"
+            factory = get_session_factory()
+            async with factory() as db:
+                stmt = (
+                    select(KnowledgeChunk)
+                    .join(KnowledgeDocument)
+                    .where(
+                        KnowledgeDocument.status == "published",
+                        KnowledgeChunk.text.like(pattern),
+                    )
+                    .limit(3)
+                )
+                chunks = list(await db.scalars(stmt))
+                if not chunks:
+                    doc_stmt = (
+                        select(KnowledgeDocument)
+                        .where(
+                            KnowledgeDocument.status == "published",
+                            KnowledgeDocument.content.like(pattern),
+                        )
+                        .limit(2)
+                    )
+                    docs = list(await db.scalars(doc_stmt))
+                    if docs:
+                        excerpts = "\n".join(f"• [{d.title}] {d.content[:200]}" for d in docs)
+                        return f"Нашёл в базе знаний:\n{excerpts}"
+                else:
+                    excerpts = "\n".join(f"• {c.text[:200]}" for c in chunks[:2])
                     return f"Нашёл в базе знаний:\n{excerpts}"
         except Exception:
             pass
         return "По вашему вопросу информация пока не найдена в базе знаний. Хотите отправить вопрос HR-администратору?"
 
     async def _handle_onboarding(self, user_id: str) -> str:
-        """Fetch employee's onboarding plan summary."""
-        import httpx
+        """Fetch employee's onboarding plan summary directly via DB."""
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                r = await client.get(f"http://127.0.0.1:8000/api/onboarding/my/{user_id}")
-            if r.status_code == 200:
-                plan = r.json()
-                tasks = plan.get("tasks", [])
-                pending = [t for t in tasks if t["status"] == "pending"]
-                done = [t for t in tasks if t["status"] == "done"]
-                return (
-                    f"Ваш план адаптации «{plan['title']}» (этап: {plan['stage']}).\n"
-                    f"Выполнено задач: {len(done)} из {len(tasks)}.\n"
-                    + (f"Следующая задача: {pending[0]['title']}" if pending else "Все задачи выполнены!")
+            from server.db import get_session_factory
+            from server.models.onboarding import OnboardingPlan, OnboardingTask
+            from sqlalchemy import select
+            factory = get_session_factory()
+            async with factory() as db:
+                plan = await db.scalar(
+                    select(OnboardingPlan)
+                    .where(OnboardingPlan.employee_id == user_id, OnboardingPlan.status == "active")
+                    .order_by(OnboardingPlan.created_at.desc())
                 )
+                if plan:
+                    tasks = list(await db.scalars(
+                        select(OnboardingTask).where(OnboardingTask.plan_id == plan.id)
+                    ))
+                    pending = [t for t in tasks if t.status == "pending"]
+                    done_tasks = [t for t in tasks if t.status == "done"]
+                    return (
+                        f"Ваш план адаптации «{plan.title}» (этап: {plan.stage}).\n"
+                        f"Выполнено задач: {len(done_tasks)} из {len(tasks)}.\n"
+                        + (f"Следующая задача: {pending[0].title}" if pending else "Все задачи выполнены!")
+                    )
         except Exception:
             pass
         return "Для вас ещё не создан план адаптации. Обратитесь к HR-менеджеру."
