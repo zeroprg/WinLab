@@ -1,0 +1,103 @@
+# WinLab HR Super-App Modularization Blueprint
+
+## Current State (to preserve)
+
+The current codebase already provides a stable recruiting backbone:
+
+- Backend: `server/routes`, `server/models`, `server/services`
+- Frontend admin: `User Interface/my-chat-react/src/components/admin/RecruitingAdmin.tsx`
+- Realtime/chat layer: `server/server.py`, `InterviewPage.tsx`, chat hooks
+
+## Target Module Layout
+
+```text
+server/
+  modules/
+    identity/
+    recruiting/
+    onboarding/
+    preboarding/
+    knowledge/
+    surveys/
+    integrations/
+    analytics/
+  shared/
+    auth/
+    db/
+    events/
+    schemas/
+```
+
+## Backend Refactor Phases
+
+### Phase A: Packaging without behavior changes
+
+- Move existing recruiting routers into `server/modules/recruiting/routes/`:
+  - `positions.py`
+  - `interviewees.py`
+  - `invites.py`
+  - `reports.py`
+  - recruiting-related parts of `assessments.py`
+- Keep existing route paths unchanged (`/api/...`) via compatibility imports.
+
+### Phase B: Service isolation
+
+- Extract bounded services:
+  - `prompt_resolver.py` -> `modules/recruiting/services/prompt_resolver.py`
+  - `assessment_service.py` -> `modules/recruiting/services/assessment_service.py`
+  - `report_pdf.py` -> `modules/recruiting/services/report_pdf.py`
+- Introduce `modules/shared/events` for async domain events.
+
+### Phase C: New domain modules
+
+- Add new modules with minimal skeleton APIs:
+  - `onboarding`
+  - `preboarding`
+  - `knowledge`
+  - `surveys`
+  - `integrations`
+- Keep each module with explicit `models`, `routes`, `services`, `schemas`.
+
+## Frontend Modularization
+
+## Current Issue
+
+`RecruitingAdmin.tsx` is overloaded with multiple responsibilities.
+
+## Target Split
+
+```text
+src/components/admin/
+  recruiting/
+    RecruitingDashboard.tsx
+    PositionsPanel.tsx
+    CandidatesPanel.tsx
+    ReportsPanel.tsx
+  onboarding/
+    OnboardingAdmin.tsx
+  preboarding/
+    PreboardingAdmin.tsx
+  knowledge/
+    KnowledgeAdmin.tsx
+  surveys/
+    SurveysAdmin.tsx
+```
+
+## Reuse Matrix
+
+| Existing Component | Action | Why |
+|---|---|---|
+| `server/models/position.py` | Reuse + extend | Core recruiting primitive |
+| `server/models/interviewee.py` | Reuse | Candidate lifecycle stays valid |
+| `server/models/interview_session.py` | Reuse + metadata extension | Session analytics and channel routing |
+| `server/routes/auth.py` + `middleware/auth.py` | Reuse first, later harden | MVP speed with upgrade path to enterprise identity |
+| `server/services/openai_client.py` | Reuse | Common AI gateway for recruiting + HR bot |
+| `RecruitingAdmin.tsx` | Split | Maintainability and team parallelism |
+
+## Migration Safety Rules
+
+1. API path compatibility first, package moves second.
+2. One module extraction per PR to reduce regression risk.
+3. Keep Alembic as single schema source of truth; avoid runtime schema mutations.
+4. Add module contract tests before moving to full domain isolation.
+
