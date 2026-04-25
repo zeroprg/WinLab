@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import type React from "react";
 import { type Message, generateMessageId } from "../types/chat";
-import { sendChatRequest } from "../services/api";
+import { sendChatMessage, sendChatRequest } from "../services/api";
 import { API_BASE } from "../services/api";
 import { useLocale } from "../contexts/LocaleContext";
 import { useUserId } from "../contexts/UserContext";
@@ -124,17 +124,17 @@ export default function useChat(): UseChatResult {
     }
     setLoading(true);
 
-    const convo = [...messagesRef.current, userMessage];
-
     try {
-      const replyText = await sendChatRequest(convo, userId, locale);
+      const result = await sendChatMessage(text, userId, locale);
 
       setMessages((m) => [
         ...m,
         {
           id: generateMessageId(),
           role: "assistant",
-          content: replyText,
+          content: result.text,
+          card_type: result.card_type,
+          metadata: result.metadata,
           timestamp: Date.now(),
         },
       ]);

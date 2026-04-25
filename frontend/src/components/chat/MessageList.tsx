@@ -7,9 +7,10 @@ type Props = {
   messages: Message[];
   loading?: boolean;
   LoadingIndicator?: React.ComponentType;
+  onQuickReply?: (choice: string) => void;
 };
 
-export default function MessageList({ messages, loading, LoadingIndicator }: Props) {
+export default function MessageList({ messages, loading, LoadingIndicator, onQuickReply }: Props) {
   const endRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLDivElement | null>(null);
   const userIsScrolling = useRef(false);
@@ -32,7 +33,7 @@ export default function MessageList({ messages, loading, LoadingIndicator }: Pro
   return (
     <div className={styles.box} ref={listRef} onWheel={handleWheel}>
       {messages.map((m) => (
-        <ChatMessage key={m.id} msg={m} />
+        <ChatMessage key={m.id} msg={m} onQuickReply={onQuickReply} />
       ))}
       {loading && LoadingIndicator ? <LoadingIndicator /> : null}
       <div ref={endRef} />

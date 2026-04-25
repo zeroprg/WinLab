@@ -101,6 +101,7 @@ export default function Chatbot() {
           messages={messages}
           loading={loading}
           LoadingIndicator={LoadingIndicator}
+          onQuickReply={(choice) => sendText(choice)}
         />
         <MessageInput
           inputRef={inputRef}

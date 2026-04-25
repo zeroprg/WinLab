@@ -3,6 +3,7 @@ import Chatbot from "./Chatbot";
 import ErrorBoundary from "./components/ErrorBoundary";
 import UserLoginOverlay from "./components/chat/UserLoginOverlay";
 import InterviewPage from "./pages/InterviewPage";
+import { AdminPortal } from "./admin/AdminPortal";
 import { LocaleProvider, useLocale } from "./contexts/LocaleContext";
 import { UserProvider, useUser } from "./contexts/UserContext";
 import appStyles from "./App.module.css";
@@ -25,6 +26,7 @@ function useHashRoute(): { path: string; param: string } {
 function MainContent() {
   const { role, userId, login, loginAdmin, logout } = useUser();
   const { t } = useLocale();
+  const { path } = useHashRoute();
   const isAdmin = role === "admin" || role === "superadmin";
 
   if (!userId) {
@@ -37,16 +39,34 @@ function MainContent() {
     );
   }
 
+  if (isAdmin && path === "admin") {
+    return (
+      <ErrorBoundary>
+        <AdminPortal />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <div className={appStyles.page}>
       <header className={appStyles.hero}>
         <h1 className={appStyles.heroTitle}>WinLab HR Assistant</h1>
-        {userId && (
-          <button className={appStyles.logoutBtn} onClick={logout}>
-            {isAdmin ? (role === "superadmin" ? "SA" : "A") + ": " : ""}
-            {userId} — {t("logoutButton")}
-          </button>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {isAdmin && (
+            <a
+              href="#/admin"
+              style={{ fontSize: 13, color: "#38bdf8", textDecoration: "none", opacity: 0.8 }}
+            >
+              Admin Panel
+            </a>
+          )}
+          {userId && (
+            <button className={appStyles.logoutBtn} onClick={logout}>
+              {isAdmin ? (role === "superadmin" ? "SA" : "A") + ": " : ""}
+              {userId} — {t("logoutButton")}
+            </button>
+          )}
+        </div>
       </header>
       <ErrorBoundary>
         <Chatbot />

@@ -471,101 +471,45 @@ async def update_user(user_id: str, payload: Dict[str, Any], db: AsyncSession = 
     return {"ok": True, "user_id": user.id, "display_name": user.display_name}
 
 
+_chat_service: "ChatService | None" = None
+
+
+def _get_chat_service():
+    global _chat_service
+    if _chat_service is None:
+        from server.services.chat_service import ChatService
+        _chat_service = ChatService()
+    return _chat_service
+
+
 @app.post("/api/message")
 async def post_message(payload: Dict[str, Any], db: AsyncSession = Depends(get_db)):
     user_id = str(payload.get("user_id", "")).strip()
     text = sanitize_text(payload.get("text", ""))
-    role = (payload.get("role") or "user").strip()
 
     if not user_id or not text:
         raise HTTPException(status_code=400, detail="user_id and text are required")
 
-    no_reply = payload.get("no_reply", False)
+    if len(text) > MAX_MESSAGE_LENGTH:
+        raise HTTPException(status_code=400, detail=f"text exceeds max length of {MAX_MESSAGE_LENGTH} characters")
 
-    if not no_reply and len(text) > MAX_MESSAGE_LENGTH:
-        raise HTTPException(
-            status_code=400,
-            detail=f"text exceeds max length of {MAX_MESSAGE_LENGTH} characters",
-        )
+    client_locale = str(payload.get("locale") or "").strip() or "ru"
 
-    # Auto-provision interviewee + session
-    client_session_id = str(payload.get("session_id") or "").strip() or None
-    client_locale = str(payload.get("locale") or "").strip() or None
-    try:
-        interviewee = await ensure_interviewee(db, user_id)
-        instructions = await resolve_prompt(db, user_id=user_id, locale=client_locale)
-        if client_session_id:
-            row = await db.scalar(
-                select(InterviewSession).where(InterviewSession.id == client_session_id)
-            )
-            if not row or row.interviewee_id != interviewee.id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="session_id is missing, invalid, or does not belong to this user",
-                )
-            session_id = row.id
-        else:
-            session = await ensure_interview_session(
-                db, interviewee, session_type="text", prompt_used=instructions,
-            )
-            session_id = session.id
-        await db.commit()
-    except HTTPException:
-        raise
-    except Exception as exc:
-        logger.warning(f"Auto-provision failed: {exc}")
-        instructions = finalize_interview_instructions(settings.OPENAI_REALTIME_INSTRUCTIONS, locale=client_locale)
-        session_id = None
-
-    user_msg = await _create_message(db, user_id, text, role=role, session_id=session_id)
-
-    if no_reply:
+    # no_reply: save user message only (used by voice transcripts)
+    if payload.get("no_reply"):
+        user_msg = await _create_message(db, user_id, text, role="user")
         return {"ok": True, "message": user_msg}
 
-    # Load conversation history from DB for context
-    hist_stmt = (
-        select(MessageModel)
-        .where(MessageModel.user_id == user_id)
-        .order_by(MessageModel.created_at.desc())
-        .limit(20)
-    )
-    rows = list(await db.scalars(hist_stmt))
-    rows.reverse()
-    history = [{"role": m.role, "content": m.text} for m in rows]
+    svc = _get_chat_service()
+    card = await svc.handle_message(db, user_id, text, locale=client_locale)
+    logger.info(f"ChatService reply card_type={card.card_type} user={user_id}")
 
-    # WinLab: try intent router first (knowledge, onboarding, HR tools)
-    reply_text = None
-    try:
-        import sys as _sys
-        _sys.path.insert(0, ".")
-        from app.modules.chatbot.routing.intent_router import IntentRouter
-        from app.modules.chatbot.schemas import ConversationEvent, Channel
-        event = ConversationEvent(
-            channel=Channel.WEB,
-            external_user_id=user_id,
-            text=text,
-            metadata={"locale": client_locale or "ru"},
-        )
-        _router = IntentRouter()
-        route = _router.route(event)
-        domain_reply = await _router.handle(route, event, user_id)
-        if domain_reply:
-            reply_text = domain_reply
-            logger.info(f"WinLab intent={route.intent.value} confidence={route.confidence:.2f}")
-    except Exception as exc:
-        logger.warning(f"WinLab intent router error: {exc}")
-
-    # Fallback to OpenAI Chat Completions if no domain response
-    if not reply_text:
-        try:
-            reply_text = await chat_completion(history, instructions)
-        except Exception as exc:
-            logger.error(f"OpenAI chat error: {exc}")
-            reply_text = f"Извините, не удалось обработать запрос. ({exc})"
-
-    assistant_msg = await _create_message(db, user_id, reply_text, role="assistant", session_id=session_id)
-
-    return {"ok": True, "message": user_msg, "reply": reply_text}
+    return {
+        "ok": True,
+        "reply": card.text,
+        "card_type": card.card_type,
+        "metadata": card.metadata,
+    }
 
 
 @app.post("/api/chat")

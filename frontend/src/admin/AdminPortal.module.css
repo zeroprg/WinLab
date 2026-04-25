@@ -1,0 +1,59 @@
+.portal {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0f172a;
+  color: #f8fafc;
+  font-family: inherit;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 16px 32px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: rgba(15,23,42,.9);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab {
+  padding: 7px 18px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+
+.tab:hover {
+  background: rgba(255,255,255,.06);
+  color: #e2e8f0;
+}
+
+.tabActive {
+  background: rgba(56,189,248,.12);
+  color: #38bdf8;
+}
+
+.content {
+  flex: 1;
+}

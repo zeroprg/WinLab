@@ -1,5 +1,5 @@
 // src/services/api.ts
-import { type Message } from "../types/chat";
+import { type CardType, type Message, type MessageMetadata } from "../types/chat";
 
 export const API_BASE = (import.meta.env.VITE_API_BASE as string) || "";
 
@@ -30,8 +30,10 @@ interface ChatApiMessage {
   [key: string]: unknown;
 }
 
-interface ChatApiResponse {
+export interface ChatApiResponse {
   reply?: string;
+  card_type?: CardType;
+  metadata?: MessageMetadata;
   message?: ChatApiMessage;
   [key: string]: unknown;
 }
@@ -129,6 +131,39 @@ export async function sendChatRequest(messages: Message[], userId = "web", local
     JSON.stringify(data);
 
   return reply;
+}
+
+export interface ChatMessageResult {
+  text: string;
+  card_type?: CardType;
+  metadata?: MessageMetadata;
+}
+
+/**
+ * Full chat API call returning text + card_type + metadata.
+ * Used by the WinLab chat widget for structured card rendering.
+ */
+export async function sendChatMessage(
+  userText: string,
+  userId: string,
+  locale: string,
+): Promise<ChatMessageResult> {
+  const res = await fetch(apiUrl("/api/message"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId, role: "user", text: userText, locale }),
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  const data = (await res.json()) as ChatApiResponse;
+  return {
+    text: data.reply ?? data?.message?.text ?? "…",
+    card_type: data.card_type,
+    metadata: data.metadata,
+  };
 }
 
 
