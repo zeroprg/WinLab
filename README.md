@@ -6,6 +6,7 @@ This project contains architecture and planning documentation for the WinLab HR 
 
 - `backend/` - modular FastAPI backend skeleton
 - `frontend/` - modular admin portal frontend skeleton
+- `demo/` - static executive demo for top-management presentations
 - `docs/hr-super-app/` - architecture and implementation documentation
 
 ## Documentation
@@ -18,4 +19,9 @@ This project contains architecture and planning documentation for the WinLab HR 
 - `docs/hr-super-app/05-mvp-roadmap.md`
 - `docs/hr-super-app/06-chatbot-runtime-modularization.md`
 - `docs/hr-super-app/07-chatbot-implementation-plan.md`
+- `docs/hr-super-app/08-executive-demo-script.md`
+
+## Demo
+
+Open `demo/executive-demo.html` in a browser for a top-management demo.
 

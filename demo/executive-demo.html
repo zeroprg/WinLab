@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WinLab HR Super-App Demo</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --panel: #111827;
+      --card: #1f2937;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg), #020617);
+      color: var(--text);
+    }
+    header {
+      padding: 48px 56px 24px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: 44px;
+      letter-spacing: -0.04em;
+    }
+    h2 {
+      margin: 0 0 18px;
+      font-size: 26px;
+    }
+    p {
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    main {
+      display: grid;
+      gap: 24px;
+      padding: 32px 56px 56px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+    .wide {
+      grid-column: span 2;
+    }
+    .card {
+      background: rgba(31,41,55,.82);
+      border: 1px solid rgba(255,255,255,.09);
+      border-radius: 22px;
+      padding: 24px;
+      box-shadow: 0 24px 80px rgba(0,0,0,.24);
+    }
+    .metric {
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(56,189,248,.12);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .chat {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .bubble {
+      max-width: 82%;
+      padding: 14px 16px;
+      border-radius: 18px;
+      color: var(--text);
+    }
+    .user {
+      justify-self: end;
+      background: #2563eb;
+    }
+    .bot {
+      justify-self: start;
+      background: #334155;
+    }
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .step {
+      padding: 14px;
+      background: rgba(15,23,42,.7);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 16px;
+      min-height: 84px;
+    }
+    ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .roadmap {
+      display: grid;
+      gap: 10px;
+    }
+    .phase {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 14px;
+      background: rgba(15,23,42,.72);
+      border-radius: 14px;
+    }
+    @media (max-width: 960px) {
+      header, main { padding-left: 24px; padding-right: 24px; }
+      .grid { grid-template-columns: 1fr; }
+      .wide { grid-column: span 1; }
+      .flow { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <span class="badge">Executive Demo</span>
+    <h1>WinLab HR Super-App</h1>
+    <p>Единый HR-помощник для адаптации, базы знаний, кадрового self-service, опросов и управленческой аналитики.</p>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="card">
+        <div class="metric">24/7</div>
+        <p>Мгновенный доступ сотрудников к проверенной HR-информации.</p>
+      </div>
+      <div class="card">
+        <div class="metric">-40%</div>
+        <p>Целевое снижение типовых обращений к HR после запуска FAQ/RAG.</p>
+      </div>
+      <div class="card">
+        <div class="metric">1C</div>
+        <p>Безопасный доступ к кадровым данным только через backend tools и аудит.</p>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card wide">
+        <h2>Сценарий сотрудника</h2>
+        <div class="chat">
+          <div class="bubble user">Сколько дней отпуска у меня осталось?</div>
+          <div class="bubble bot">Проверю право доступа и запрошу данные в 1C через защищенный HR tool.</div>
+          <div class="bubble bot">У вас осталось 12 дней отпуска. Источник: 1C ЗУП, обновлено сегодня.</div>
+          <div class="bubble user">А где посмотреть план адаптации?</div>
+          <div class="bubble bot">Ваш этап: первая неделя. Следующая задача: пройти вводный курс и подтвердить встречу с руководителем.</div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>HR Dashboard</h2>
+        <ul>
+          <li>Адаптация по городам и отделам</li>
+          <li>Нераспознанные вопросы</li>
+          <li>SLA эскалаций</li>
+          <li>Частые темы обращений</li>
+          <li>Pulse и exit-опросы</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Архитектура доверия</h2>
+      <div class="flow">
+        <div class="step"><strong>Канал</strong><br />Yandex / Web / Mobile</div>
+        <div class="step"><strong>Chatbot Runtime</strong><br />state, intent, consent</div>
+        <div class="step"><strong>AI/RAG</strong><br />ответы из источников</div>
+        <div class="step"><strong>HR Tools</strong><br />типизированные операции</div>
+        <div class="step"><strong>1C / HR Core</strong><br />данные и аудит</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="card wide">
+        <h2>Roadmap</h2>
+        <div class="roadmap">
+          <div class="phase"><strong>Phase 1</strong><span>Chatbot Runtime + RAG MVP</span></div>
+          <div class="phase"><strong>Phase 2</strong><span>Onboarding journeys</span></div>
+          <div class="phase"><strong>Phase 3</strong><span>Preboarding documents</span></div>
+          <div class="phase"><strong>Phase 4</strong><span>1C self-service tools</span></div>
+          <div class="phase"><strong>Phase 5</strong><span>Surveys + Analytics</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Почему это безопасно</h2>
+        <ul>
+          <li>LLM не ходит напрямую в 1C</li>
+          <li>Каждый PII-запрос аудируется</li>
+          <li>Нераспознанное отправляется HR только с согласием</li>
+          <li>Ответы KB ссылаются на источники</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
+

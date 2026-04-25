@@ -11,6 +11,7 @@ This folder contains the implementation artifacts for the approved architecture 
 5. [05-mvp-roadmap.md](./05-mvp-roadmap.md)
 6. [06-chatbot-runtime-modularization.md](./06-chatbot-runtime-modularization.md)
 7. [07-chatbot-implementation-plan.md](./07-chatbot-implementation-plan.md)
+8. [08-executive-demo-script.md](./08-executive-demo-script.md)
 
 ## Intended Use
 
