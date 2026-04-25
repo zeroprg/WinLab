@@ -17,10 +17,18 @@
 ```mermaid
 flowchart TD
   webApp["React Admin Portal"] --> apiGateway["API Gateway / BFF"]
-  yandexBot["Yandex Messenger Bot"] --> apiGateway
-  futureBots["Telegram / Web / Mobile Channels"] --> apiGateway
+  webChat["Web Chat"] --> channelGateway["Channel Gateway"]
+  yandexBot["Yandex Messenger Bot"] --> channelGateway
+  futureBots["Telegram / Mobile Channels"] --> channelGateway
 
+  channelGateway --> chatbotRuntime["Chatbot Runtime / Conversation Orchestrator"]
   apiGateway --> hrCore["HR Core API (FastAPI)"]
+  apiGateway --> chatbotRuntime
+
+  chatbotRuntime --> conversationState["Conversation State"]
+  chatbotRuntime --> intentRouter["Intent Router"]
+  chatbotRuntime --> consentFlow["Consent / Escalation Flow"]
+
   hrCore --> authModule["Identity, RBAC, Audit"]
   hrCore --> recruitingModule["Recruiting Module"]
   hrCore --> onboardingModule["Preboarding / Onboarding"]
@@ -28,7 +36,9 @@ flowchart TD
   hrCore --> surveysModule["Surveys / Pulse / Exit Interviews"]
   hrCore --> analyticsModule["Analytics"]
 
-  hrCore --> aiService["AI/RAG Service"]
+  intentRouter --> aiService["AI/RAG Service"]
+  intentRouter --> hrCore
+  intentRouter --> integrationGateway["Integration Gateway"]
   aiService --> vectorStore["pgvector / FAISS"]
   aiService --> llmProvider["LLM Provider"]
 
@@ -36,7 +46,8 @@ flowchart TD
   hrCore --> redis["Redis Queue / Cache"]
   redis --> worker["Background Worker"]
   worker --> objectStore["Object Storage"]
-  worker --> oneC["1C Integration"]
+  integrationGateway --> oneC["1C Integration"]
+  worker --> integrationGateway
   worker --> sberPulse["Sber Pulse Integration"]
 ```
 
@@ -65,6 +76,9 @@ flowchart TD
 
 8. `Analytics`  
    адаптация, self-service, recruiting, surveys KPI; дальнейший переход к BI/data mart.
+
+9. `Chatbot Runtime / Conversation Orchestrator`  
+   отдельный orchestration layer для каналов, состояния диалога, intent routing, RAG-вызовов, HR tools, consent/escalation и audit. Это не UI и не LLM: он связывает каналы (`Yandex`, `Web`, будущий `Telegram/mobile`) с HR-доменами и AI/RAG.
 
 ## Интеграции
 
@@ -102,6 +116,7 @@ flowchart TD
 - разгрузить `server/server.py` на отдельные routers/services;
 - разделить тяжелый admin UI на модульные панели;
 - оставить текущий JWT/RBAC в MVP, подготовить траекторию на enterprise identity/SSO.
+- использовать существующий chat/runtime foundation из `ai-recruiter` как основу для `Chatbot Runtime`, но отделить HR chatbot policies от recruiting interview policies.
 
 ## Реализационные артефакты
 
@@ -112,4 +127,5 @@ flowchart TD
 - `docs/hr-super-app/03-modularization-blueprint.md`
 - `docs/hr-super-app/04-integration-contracts.md`
 - `docs/hr-super-app/05-mvp-roadmap.md`
+- `docs/hr-super-app/06-chatbot-runtime-modularization.md`
 

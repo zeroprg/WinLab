@@ -9,6 +9,8 @@ This folder contains the implementation artifacts for the approved architecture 
 3. [03-modularization-blueprint.md](./03-modularization-blueprint.md)
 4. [04-integration-contracts.md](./04-integration-contracts.md)
 5. [05-mvp-roadmap.md](./05-mvp-roadmap.md)
+6. [06-chatbot-runtime-modularization.md](./06-chatbot-runtime-modularization.md)
+7. [07-chatbot-implementation-plan.md](./07-chatbot-implementation-plan.md)
 
 ## Intended Use
 

@@ -17,6 +17,7 @@ server/
     recruiting/
     onboarding/
     preboarding/
+    chatbot/
     knowledge/
     surveys/
     integrations/
@@ -47,16 +48,50 @@ server/
   - `assessment_service.py` -> `modules/recruiting/services/assessment_service.py`
   - `report_pdf.py` -> `modules/recruiting/services/report_pdf.py`
 - Introduce `modules/shared/events` for async domain events.
+- Extract reusable chat foundation from the existing `ai-recruiter` chat/realtime code:
+  - `ChatSession`
+  - `ChatMessage`
+  - `ChatParticipant`
+  - `ChatChannel`
+- Keep recruiting behavior unchanged through a `RecruitingBotPolicy` adapter.
 
 ### Phase C: New domain modules
 
 - Add new modules with minimal skeleton APIs:
+  - `chatbot`
   - `onboarding`
   - `preboarding`
   - `knowledge`
   - `surveys`
   - `integrations`
 - Keep each module with explicit `models`, `routes`, `services`, `schemas`.
+
+### Chatbot Module Layout
+
+```text
+server/modules/chatbot/
+  channels/
+    yandex.py
+    web.py
+    telegram.py
+  conversation/
+    state.py
+    repository.py
+  routing/
+    intent_router.py
+    policies.py
+  tools/
+    executor.py
+    registry.py
+  escalation/
+    service.py
+  audit/
+    events.py
+  schemas.py
+  routes.py
+```
+
+The `chatbot` module orchestrates channels, conversation state, intent routing, RAG calls, HR tools, escalation, and audit. It must not own 1C, onboarding, surveys, or knowledge business logic directly.
 
 ## Frontend Modularization
 
@@ -77,6 +112,12 @@ src/components/admin/
     OnboardingAdmin.tsx
   preboarding/
     PreboardingAdmin.tsx
+  chatbot/
+    ChatbotDashboard.tsx
+    UnresolvedQueriesPanel.tsx
+    ConversationLogsPanel.tsx
+    ChannelSettingsPanel.tsx
+    BotPoliciesPanel.tsx
   knowledge/
     KnowledgeAdmin.tsx
   surveys/
@@ -92,7 +133,21 @@ src/components/admin/
 | `server/models/interview_session.py` | Reuse + metadata extension | Session analytics and channel routing |
 | `server/routes/auth.py` + `middleware/auth.py` | Reuse first, later harden | MVP speed with upgrade path to enterprise identity |
 | `server/services/openai_client.py` | Reuse | Common AI gateway for recruiting + HR bot |
+| Existing chat hooks / web chat UX | Reuse + adapt | Foundation for WinLab web chatbot channel |
+| Existing message/session lifecycle | Reuse as pattern | Basis for `ConversationSession` and `ConversationMessage` |
+| Existing realtime voice/text patterns | Reuse selectively | Optional future voice channel support |
 | `RecruitingAdmin.tsx` | Split | Maintainability and team parallelism |
+
+## Chatbot Policy Separation
+
+The runtime foundation can be shared, but domain policies must stay separate:
+
+| Policy | Scope |
+|---|---|
+| `RecruitingBotPolicy` | Interviews, vacancies, candidate assessment, PDF reports |
+| `HrAssistantBotPolicy` | HR FAQ, onboarding, documents, 1C tools, surveys, escalation |
+
+This prevents recruiting interview logic from leaking into employee HR self-service flows.
 
 ## Migration Safety Rules
 

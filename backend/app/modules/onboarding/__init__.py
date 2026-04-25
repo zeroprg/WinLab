@@ -1,0 +1,2 @@
+"""Onboarding and adaptation module."""
+

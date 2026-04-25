@@ -1,0 +1,2 @@
+"""Conversation persistence repository placeholder."""
+
