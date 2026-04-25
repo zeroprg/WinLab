@@ -81,33 +81,22 @@ class ChatbotRuntime:
 
         if not decision.allowed:
             response_text = "Этот запрос нельзя обработать в текущем контексте."
-        elif route.intent == IntentType.KNOWLEDGE:
-            response_text = (
-                "Я проверю утвержденную базу знаний WinLab и отвечу "
-                "со ссылками на источники."
-            )
-        elif route.intent == IntentType.HR_SELF_SERVICE:
-            response_text = (
-                "Это кадровый запрос. Я выполню его через защищенный HR tool "
-                "с проверкой прав доступа и аудитом."
-            )
-        elif route.intent == IntentType.ONBOARDING:
-            response_text = (
-                "Это вопрос по адаптации. Я открою соответствующий onboarding "
-                "сценарий и покажу следующий шаг."
-            )
-        elif route.intent == IntentType.SURVEY:
-            response_text = "Это ответ/запрос по опросу. Я передам его в Surveys module."
         else:
-            ticket = self.escalation_service.create_ticket(
-                session_id=session.id,
-                question=event.text,
-                consent_given=False,
-            )
-            response_text = (
-                "Я не уверен в ответе. Могу отправить вопрос HR-администратору "
-                f"после вашего подтверждения. Черновик обращения: {ticket.id}."
-            )
+            user_id = event.external_user_id
+            domain_response = await self.intent_router.handle(route, event, user_id)
+            if domain_response is not None:
+                response_text = domain_response
+            else:
+                ticket = self.escalation_service.create_ticket(
+                    session_id=session.id,
+                    question=event.text,
+                    consent_given=False,
+                )
+                response_text = (
+                    "Я не нашёл ответа в базе знаний. Могу отправить вопрос "
+                    "HR-администратору после вашего подтверждения.\n"
+                    "Ответьте «Да» чтобы отправить, или задайте другой вопрос."
+                )
 
         assistant_message = ConversationMessage(
             session_id=session.id,

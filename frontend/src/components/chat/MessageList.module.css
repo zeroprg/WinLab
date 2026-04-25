@@ -1,0 +1,6 @@
+.box {
+  flex: 1;
+  background: var(--bg-muted);
+  padding: 12px;
+  overflow-y: auto;
+}

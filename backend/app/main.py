@@ -1,6 +1,10 @@
-"""FastAPI application entrypoint placeholder.
+"""FastAPI application entrypoint for WinLab.
 
-The first implementation slice should include routers from domain modules
-without putting business logic in this file.
+Wires the migrated chat backend (text + Realtime voice + invite consume)
+from `server/server.py`. The orchestration layer in `app/modules/chatbot/`
+remains the target home for the next phases of the plan.
 """
 
+from server.server import app
+
+__all__ = ["app"]
